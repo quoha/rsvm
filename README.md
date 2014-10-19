@@ -12,9 +12,12 @@ RSVM contains only 8 instructions and is easy to extend via the exop instruction
 an 8-bit word (a single byte). I plan on adding in 16-, 32-, and 64-bit words.
 
 No matter what the word size is, the instructions are:
+
+```
    4 bits for the function/operation
    1 bit each for the D, P, G, and I modifiers
    remaining bits are used as data
+```
 
 The 8 bits that we use are always in the word's "high" byte so that we don't have to shift things around
 to use the data.
