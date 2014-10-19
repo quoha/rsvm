@@ -39,7 +39,7 @@ Note that only 256 words are addressable by the program counter.
 Instruction layout with word size of 16 bits.
 
 ```
-   bit  15     is  the D bit, D loaded from following qcell
+   bit  15     is  the D bit, D loaded from following word
    bit  14     is  the P bit, P to be added to D
    bit  13     is  the G bit, G to be added to D
    bit  13     is  the I bit, D loaded indirectly from D
@@ -53,7 +53,7 @@ Note that with a 16 bit address, core is limited to 65k cells.
 Instruction layout with word size of 32 bits.
 
 ```
-   bit  31     is  the D bit, D loaded from following qcell
+   bit  31     is  the D bit, D loaded from following word
    bit  30     is  the P bit, P to be added to D
    bit  29     is  the G bit, G to be added to D
    bit  28     is  the I bit, D loaded indirectly from D
@@ -65,7 +65,7 @@ Instruction layout with word size of 32 bits.
 Instruction layout with word size of 64 bits.
 
 ```
-   bit  63     is  the D bit, D loaded from following qcell
+   bit  63     is  the D bit, D loaded from following word
    bit  62     is  the P bit, P to be added to D
    bit  61     is  the G bit, G to be added to D
    bit  60     is  the I bit, D loaded indirectly from D
