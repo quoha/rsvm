@@ -26,11 +26,13 @@ Note that there could be 16 instructions because we use 4 bits for the function.
 
 Instruction layout with word size of 8 bits.
 
+```
    bit   7     is  the D bit, D loaded from following word
    bit   6     is  the P bit, P to be added to D
    bit   5     is  the G bit, G to be added to D
    bit   4     is  the I bit, D loaded indirectly from D
    bits  3...0 are the function bits
+```
 
 Note that only 256 words are addressable by the program counter.
 
