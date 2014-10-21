@@ -8,8 +8,8 @@
 //    http://www.cl.cam.ac.uk/~mr10/bcplman.pdf
 //    http://www.gtoal.com/languages/bcpl/amiga/bcpl/booting.txt
 //
-//  this vm contains only 7 instructions. it's easy to extend via
-//  the exop instruction.
+//  this vm contains only 8 instructions. it's easy to extend via
+//  the exop instruction. it comes with a very basic assembler.
 //
 
 #include <stdio.h>
@@ -40,6 +40,7 @@ typedef unsigned short rsreg;  // 16-bit  registers
 //   d    address register
 //   g    global variable base pointer
 //   p    stack frame pointer/index
+//   rs   return stack
 // core
 //
 // TODO: express in terms of
@@ -61,8 +62,9 @@ typedef struct rsvm {
     rsword b;  // additional accumulator
 
     size_t  coreSize; // number of words allocated to core
-    rsword  gv[512];  // global variable array;
-    rsword  pv[512];  // program call stack;
+    rsword  gv[512];  // global variable array
+    rsword  pv[512];  // program call stack
+    rsword  rs[32];   // return stack
     rsword  core[1];
 } rsvm;
 
@@ -135,6 +137,7 @@ typedef struct rsvm {
 #define RSOPC_LOAD     ((0x05) << RSOPC_BITS_TO_SHIFT)
 #define RSOPC_STORE    ((0x06) << RSOPC_BITS_TO_SHIFT)
 #define RSOPC_EXOP     ((0x07) << RSOPC_BITS_TO_SHIFT)
+#define RSOPC_HALT     ((0x0f) << RSOPC_BITS_TO_SHIFT)
 
 // formatting for logs and et cetera
 //
@@ -276,7 +279,7 @@ void rsvm_exec(rsvm *vm) {
     rsword iBit     = RSOP_IBIT(code);
     rsword addrBits = RSOP_DATA(code);
     
-    // if the D bit is set, the address is the value of the next cell.
+    // if the D bit is set, the address is the value of the next word.
     // other wise, it is just the program counter plus the address offset.
     // if the P bit is set, the P register is added to D.
     // if the G bit is set, the G register is added to D.
@@ -303,6 +306,7 @@ void rsvm_exec(rsvm *vm) {
             vm->a += vm->d;
             break;
         case RSOPC_CALL:
+            printf(".warn: call not implemented\n");
             vm->d += vm->p;
             vm->core[vm->d] = vm->p;
             vm->core[vm->d + 1] = vm->c;
@@ -311,6 +315,10 @@ void rsvm_exec(rsvm *vm) {
             break;
         case RSOPC_EXOP:
             printf(".warn: exop not implemented\n");
+            break;
+        case RSOPC_HALT:    // halt and stay on the same instruction
+            vm->c--;
+            vm->halted = 1;
             break;
         case RSOPC_JMP:
             vm->c = vm->d;
@@ -406,6 +414,7 @@ void  rsvm_loader(rsvm *vm, size_t address, const char *code) {
             case 'p': pBit     = -1; break;
             case 'a': function = RSOPC_ADD  ; mnemonic = rsvm_util_op2mnemonic(function); break;
             case 'f': function = RSOPC_JMPF ; mnemonic = rsvm_util_op2mnemonic(function); break;
+            case 'h': function = RSOPC_HALT ; mnemonic = rsvm_util_op2mnemonic(function); break;
             case 'j': function = RSOPC_JMP  ; mnemonic = rsvm_util_op2mnemonic(function); break;
             case 'k': function = RSOPC_CALL ; mnemonic = rsvm_util_op2mnemonic(function); break;
             case 'l': function = RSOPC_LOAD ; mnemonic = rsvm_util_op2mnemonic(function); break;
@@ -436,7 +445,8 @@ void  rsvm_loader(rsvm *vm, size_t address, const char *code) {
 
 void rsvm_reset(rsvm *vm) {
     vm->a = vm->b = vm->c = vm->d = vm->g = vm->g = 0;
-    vm->debug.level = 0;
+    vm->halted      =  0;
+    vm->debug.level =  0;
     vm->debug.steps = -1;
 }
 
@@ -445,6 +455,7 @@ const char *rsvm_util_op2mnemonic(rsword op) {
         case RSOPC_ADD  : return "add"  ;
         case RSOPC_CALL : return "call" ;
         case RSOPC_EXOP : return "exop" ;
+        case RSOPC_HALT : return "halt" ;
         case RSOPC_JMP  : return "jmp"  ;
         case RSOPC_JMPF : return "jmpf" ;
         case RSOPC_JMPT : return "jmpt" ;
@@ -461,9 +472,9 @@ int main(int argc, const char * argv[]) {
     const char *program = "";
 
 #if (RSVM_WORD_SIZE == 1)
-    program = "q da 12 q h gpil px ga pgs k j t f l l 12da34daDEdaADdaBEdaEFda ; comments welcome";
+    program = "x 1 da 12 q h gpil px ga pgs k j t f l l 12da34daDEdaADdaBEdaEFda h ; comments welcome";
 #else
-    program = "q da 1234 q h gpil px ga pgs k j t f l l 1234 DEAD BEEF ; comments welcome";
+    program = "x 1 da 1234 q h gpil px ga pgs k j t f l l 1234 DEAD BEEF h ; comments welcome";
 #endif
 
     rsvm_loader(vm, 0, program);
