@@ -21,10 +21,14 @@
 // number of bytes that the program counter updates on each step. the
 // plan is support 8-, 16-, 32-, and 64-bit words and floating point.
 //
-#define RSVM_WORD_SIZE 1 // 8-bit register
+//#define RSVM_WORD_SIZE 1 //  8-bit register
+#define RSVM_WORD_SIZE 2 // 16-bit register
 
 #if (RSVM_WORD_SIZE == 1)
 typedef unsigned char  rsword; //  1-byte program counter
+typedef unsigned short rsreg;  // 16-bit  registers
+#elif (RSVM_WORD_SIZE == 2)
+typedef unsigned short rsword; //  1-byte program counter
 typedef unsigned short rsreg;  // 16-bit  registers
 #else
 #error you must specify the word size to use
@@ -111,37 +115,38 @@ typedef struct rsvm {
 //   bits 55...0 are used in various ways
 //               56 bits, 7 bytes, range is wowsers
 //
-#if (RSVM_WORD_SIZE == 1)
-#define RSOP_DBIT(op) ((op) & 0x80)
-#define RSOP_PBIT(op) ((op) & 0x40)
-#define RSOP_GBIT(op) ((op) & 0x20)
-#define RSOP_IBIT(op) ((op) & 0x10)
-#define RSOP_FUNC(op) ((op) & 0x0f)
-#define RSOP_DATA(op) ((op) & 0x00)
-#else
-#error you must specify the word size to use
-#endif
-
 // basic bit patterns for the instructions
 //
 #if (RSVM_WORD_SIZE == 1)
 #define RSOPC_BITS_TO_SHIFT 0
+#elif (RSVM_WORD_SIZE == 2)
+#define RSOPC_BITS_TO_SHIFT 0
 #else
 #error you must specify the word size to use
 #endif
-#define RSOPC_ADD      ((0x00) << RSOPC_BITS_TO_SHIFT)
-#define RSOPC_CALL     ((0x01) << RSOPC_BITS_TO_SHIFT)
-#define RSOPC_JMP      ((0x02) << RSOPC_BITS_TO_SHIFT)
-#define RSOPC_JMPT     ((0x03) << RSOPC_BITS_TO_SHIFT)
-#define RSOPC_JMPF     ((0x04) << RSOPC_BITS_TO_SHIFT)
-#define RSOPC_LOAD     ((0x05) << RSOPC_BITS_TO_SHIFT)
-#define RSOPC_STORE    ((0x06) << RSOPC_BITS_TO_SHIFT)
-#define RSOPC_EXOP     ((0x07) << RSOPC_BITS_TO_SHIFT)
-#define RSOPC_HALT     ((0x0f) << RSOPC_BITS_TO_SHIFT)
+
+#define RSOP_DBIT(op) ((op) & (0x80 << RSOPC_BITS_TO_SHIFT))
+#define RSOP_PBIT(op) ((op) & (0x40 << RSOPC_BITS_TO_SHIFT))
+#define RSOP_GBIT(op) ((op) & (0x20 << RSOPC_BITS_TO_SHIFT))
+#define RSOP_IBIT(op) ((op) & (0x10 << RSOPC_BITS_TO_SHIFT))
+#define RSOP_FUNC(op) ((op) & (0x0f << RSOPC_BITS_TO_SHIFT))
+#define RSOP_DATA(op) ((op) & (0x00 << RSOPC_BITS_TO_SHIFT))
+
+#define RSOPC_ADD   (RSOP_FUNC(0x00))
+#define RSOPC_CALL  (RSOP_FUNC(0x01))
+#define RSOPC_JMP   (RSOP_FUNC(0x02))
+#define RSOPC_JMPT  (RSOP_FUNC(0x03))
+#define RSOPC_JMPF  (RSOP_FUNC(0x04))
+#define RSOPC_LOAD  (RSOP_FUNC(0x05))
+#define RSOPC_STORE (RSOP_FUNC(0x06))
+#define RSOPC_EXOP  (RSOP_FUNC(0x07))
+#define RSOPC_HALT  (RSOP_FUNC(0x0f))
 
 // formatting for logs and et cetera
 //
 #if (RSVM_WORD_SIZE == 1)
+#define RSWORDFMT "0x%02x"
+#elif (RSVM_WORD_SIZE == 2)
 #define RSWORDFMT "0x%02x"
 #else
 #error you must specify the word size to use
@@ -466,6 +471,12 @@ const char *rsvm_util_op2mnemonic(rsword op) {
 }
 
 int main(int argc, const char * argv[]) {
+    typedef unsigned int   rsword; //  1-byte program counter
+    typedef unsigned int   rsreg;  // 16-bit  registers
+
+    printf(".info: sizeof(rsword) == %5d\n", sizeof(rsword));
+    printf(".info: sizeof(rsreg ) == %5d\n", sizeof(rsreg ));
+
     rsvm *vm = rsvm_alloc(64 * 1024, 10, 8);
     rsvm_dump(vm);
     
